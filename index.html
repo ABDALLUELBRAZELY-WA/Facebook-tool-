@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نشر تلقائي على مجموعات فيسبوك</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: linear-gradient(135deg, #e8f0fe 0%, #f0f2f5 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(24,119,242,0.10);
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 560px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    justify-content: center;
+  }
+  .logo h1 { font-size: 1.4rem; color: #1877f2; font-weight: 700; }
+  #loginScreen { text-align: center; }
+  #loginScreen p { color: #666; margin-bottom: 28px; font-size: 0.97rem; line-height: 1.6; }
+  .fb-login-btn {
+    background: #1877f2;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 32px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s;
+  }
+  .fb-login-btn:hover { background: #1558b0; }
+  #appScreen { display: none; }
+  .user-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f0f2f5;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+  }
+  .user-bar img { width: 42px; height: 42px; border-radius: 50%; border: 2px solid #1877f2; }
+  .user-bar .name { font-weight: 700; color: #222; font-size: 0.97rem; }
+  .user-bar .sub { font-size: 0.78rem; color: #888; }
+  .logout-btn {
+    margin-right: auto;
+    background: none;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    padding: 6px 14px;
+    color: #888;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .logout-btn:hover { border-color: #e74c3c; color: #e74c3c; }
+  label { display: block; font-size: 0.88rem; color: #555; margin-bottom: 6px; font-weight: 600; }
+  .groups-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .select-all-btn { font-size: 0.78rem; color: #1877f2; cursor: pointer; background: none; border: none; font-weight: 600; }
+  .groups-container {
+    border: 1.5px solid #e0e0e0;
+    border-radius: 12px;
+    max-height: 220px;
+    overflow-y: auto;
+    margin-bottom: 18px;
+    background: #fafafa;
+  }
+  .group-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .group-item:last-child { border-bottom: none; }
+  .group-item:hover { background: #f0f4ff; }
+  .group-item input[type=checkbox] { width: 17px; height: 17px; accent-color: #1877f2; }
+  .group-item .gname { font-size: 0.92rem; color: #222; font-weight: 500; flex: 1; }
+  .privacy { font-size: 0.72rem; padding: 2px 8px; border-radius: 20px; background: #e8f0fe; color: #1877f2; }
+  .cat-row { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .cat-btn { padding: 6px 14px; border-radius: 20px; border: 1.5px solid #ddd; background: white; font-size: 0.82rem; cursor: pointer; color: #555; }
+  .cat-btn.active { background: #1877f2; color: white; border-color: #1877f2; }
+  textarea {
+    width: 100%;
+    border: 1.5px solid #ddd;
+    border-radius: 12px;
+    padding: 13px 15px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    direction: rtl;
+    min-height: 120px;
+    resize: vertical;
+    margin-bottom: 18px;
+    background: #f8f9fa;
+    transition: border 0.2s;
+  }
+  textarea:focus { border-color: #1877f2; outline: none; background: white; }
+  .schedule-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; cursor: pointer; font-size: 0.9rem; color: #444; font-weight: 600; }
+  .schedule-toggle input { width: 17px; height: 17px; accent-color: #1877f2; }
+  #scheduleBox { display: none; margin-bottom: 18px; }
+  #scheduleBox.show { display: block; }
+  input[type=datetime-local] { width: 100%; border: 1.5px solid #ddd; border-radius: 12px; padding: 12px 14px; font-size: 0.95rem; background: #f8f9fa; font-family: inherit; }
+  .post-btn { width: 100%; background: #1877f2; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; margin-top: 4px; }
+  .post-btn:hover { background: #1558b0; }
+  .post-btn:disabled { background: #aaa; cursor: not-allowed; }
+  .status { margin-top: 16px; padding: 12px 16px; border-radius: 10px; font-size: 0.92rem; display: none; line-height: 1.5; }
+  .status.success { background: #e6f4ea; color: #256029; display: block; }
+  .status.error { background: #fdecea; color: #a61c00; display: block; }
+  .status.loading { background: #e8f0fe; color: #1558b0; display: block; }
+  .divider { border: none; border-top: 1px solid #eee; margin: 22px 0; }
+  .log-list { max-height: 200px; overflow-y: auto; }
+  .log-item { background: #f8f9fa; border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; font-size: 0.85rem; border-right: 4px solid #1877f2; }
+  .log-item .meta { color: #888; font-size: 0.75rem; margin-top: 3px; }
+  .warn-box { background: #fff8e1; border: 1.5px solid #ffe082; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; font-size: 0.83rem; color: #795548; line-height: 1.6; }
+  .no-groups { text-align: center; padding: 30px; color: #aaa; font-size: 0.9rem; }
+  .loading-groups { text-align: center; padding: 20px; color: #1877f2; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <svg width="36" height="36" viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="#1877f2"/><path d="M22.5 20.5h3l.5-3.5h-3.5V15c0-1 .5-1.5 1.5-1.5h2V10.5s-1-.2-2.5-.2c-3 0-5 1.8-5 5v2.7H16V21h2.5V30h4V20.5z" fill="white"/></svg>
+    <h1>نشر تلقائي على المجموعات</h1>
+  </div>
+
+  <div id="loginScreen">
+    <p>سجّل دخولك بحساب فيسبوك عشان تشوف مجموعاتك وتنشر فيها مباشرة</p>
+    <button class="fb-login-btn" onclick="fbLogin()">
+      <svg width="20" height="20" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="white"/><path d="M22.5 20.5h3l.5-3.5h-3.5V15c0-1 .5-1.5 1.5-1.5h2V10.5s-1-.2-2.5-.2c-3 0-5 1.8-5 5v2.7H16V21h2.5V30h4V20.5z" fill="#1877f2"/></svg>
+      تسجيل الدخول بفيسبوك
+    </button>
+    <p style="margin-top:20px; font-size:0.78rem; color:#bbb;">الأداة تستخدم Facebook Login الرسمي ولا تحفظ كلمة سرك</p>
+  </div>
+
+  <div id="appScreen">
+    <div class="user-bar">
+      <img id="userPic" src="" alt="">
+      <div>
+        <div class="name" id="userName">...</div>
+        <div class="sub">متصل بفيسبوك ✓</div>
+      </div>
+      <button class="logout-btn" onclick="fbLogout()">خروج</button>
+    </div>
+
+    <div class="warn-box">
+      ⚠️ في وضع التطوير، الأداة تشتغل بس مع حسابك الشخصي. للنشر لعدد كبير من المستخدمين محتاج اعتماد التطبيق من فيسبوك (App Review).
+    </div>
+
+    <div class="groups-header">
+      <label style="margin:0">👥 اختار المجموعات</label>
+      <button class="select-all-btn" onclick="selectAll()">تحديد الكل</button>
+    </div>
+    <div class="groups-container" id="groupsContainer">
+      <div class="loading-groups">⏳ جاري تحميل مجموعاتك...</div>
+    </div>
+
+    <label>🏷️ فلتر التصنيف</label>
+    <div class="cat-row">
+      <button class="cat-btn active" onclick="filterCat('all', this)">الكل</button>
+      <button class="cat-btn" onclick="filterCat('عقارات', this)">عقارات</button>
+      <button class="cat-btn" onclick="filterCat('بيع وشراء', this)">بيع وشراء</button>
+      <button class="cat-btn" onclick="filterCat('وظائف', this)">وظائف</button>
+      <button class="cat-btn" onclick="filterCat('عام', this)">عام</button>
+    </div>
+
+    <label>✍️ نص المنشور</label>
+    <textarea id="message" placeholder="اكتب محتوى المنشور هنا..."></textarea>
+
+    <label class="schedule-toggle">
+      <input type="checkbox" id="scheduleCheck" onchange="toggleSchedule()">
+      ⏰ جدولة المنشور
+    </label>
+    <div id="scheduleBox">
+      <input type="datetime-local" id="scheduleTime" />
+    </div>
+
+    <button class="post-btn" id="postBtn" onclick="handlePost()">🚀 نشر الآن</button>
+    <div class="status" id="status"></div>
+
+    <hr class="divider">
+    <div id="logSection" style="display:none">
+      <label>📋 سجل المنشورات</label>
+      <div class="log-list" id="logList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const APP_ID = '1955062585423721';
+  let accessToken = '';
+  let allGroups = [];
+  let groupCategories = {};
+  let logs = [];
+
+  window.fbAsyncInit = function() {
+    FB.init({ appId: APP_ID, cookie: true, xfbml: true, version: 'v19.0' });
+    FB.getLoginStatus(function(response) {
+      if (response.status === 'connected') {
+        accessToken = response.authResponse.accessToken;
+        showApp();
+      }
+    });
+  };
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "https://connect.facebook.net/ar_AR/sdk.js";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+
+  function fbLogin() {
+    FB.login(function(response) {
+      if (response.authResponse) {
+        accessToken = response.authResponse.accessToken;
+        showApp();
+      } else {
+        showStatus('❌ تم إلغاء تسجيل الدخول', 'error');
+      }
+    }, { scope: 'groups_access_member_info,publish_to_groups' });
+  }
+
+  function fbLogout() {
+    FB.logout(function() {
+      accessToken = '';
+      allGroups = [];
+      document.getElementById('loginScreen').style.display = 'block';
+      document.getElementById('appScreen').style.display = 'none';
+    });
+  }
+
+  function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+    loadUser();
+    loadGroups();
+  }
+
+  function loadUser() {
+    FB.api('/me', { fields: 'name,picture' }, function(res) {
+      document.getElementById('userName').textContent = res.name || 'مستخدم';
+      if (res.picture && res.picture.data) document.getElementById('userPic').src = res.picture.data.url;
+    });
+  }
+
+  function loadGroups() {
+    FB.api('/me/groups', { fields: 'id,name,privacy', limit: 100 }, function(res) {
+      const container = document.getElementById('groupsContainer');
+      if (!res || res.error) {
+        container.innerHTML = `<div class="no-groups">⚠️ تعذّر جلب المجموعات<br><small>${res && res.error ? res.error.message : 'تحقق من صلاحيات التطبيق'}</small></div>`;
+        return;
+      }
+      if (!res.data || res.data.length === 0) {
+        container.innerHTML = '<div class="no-groups">لا توجد مجموعات في حسابك</div>';
+        return;
+      }
+      allGroups = res.data;
+      allGroups.forEach(g => { groupCategories[g.id] = 'عام'; });
+      renderGroups(allGroups);
+    });
+  }
+
+  function renderGroups(groups) {
+    const container = document.getElementById('groupsContainer');
+    if (!groups.length) { container.innerHTML = '<div class="no-groups">لا توجد مجموعات</div>'; return; }
+    container.innerHTML = groups.map(g => `
+      <div class="group-item" onclick="document.getElementById('chk_${g.id}').click()">
+        <input type="checkbox" id="chk_${g.id}" value="${g.id}" onclick="event.stopPropagation()">
+        <div class="gname">${g.name}</div>
+        <span class="privacy">${g.privacy === 'OPEN' ? '🌍 عام' : '🔒 خاص'}</span>
+      </div>
+    `).join('');
+  }
+
+  function selectAll() {
+    const checks = document.querySelectorAll('#groupsContainer input[type=checkbox]');
+    const allChecked = Array.from(checks).every(c => c.checked);
+    checks.forEach(c => c.checked = !allChecked);
+  }
+
+  function filterCat(cat, btn) {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderGroups(cat === 'all' ? allGroups : allGroups.filter(g => groupCategories[g.id] === cat));
+  }
+
+  function toggleSchedule() {
+    const checked = document.getElementById('scheduleCheck').checked;
+    document.getElementById('scheduleBox').classList.toggle('show', checked);
+    document.getElementById('postBtn').textContent = checked ? '📅 جدولة المنشور' : '🚀 نشر الآن';
+  }
+
+  function showStatus(msg, type) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+  }
+
+  function getSelectedGroups() {
+    return Array.from(document.querySelectorAll('#groupsContainer input[type=checkbox]:checked')).map(c => ({
+      id: c.value,
+      name: allGroups.find(g => g.id === c.value)?.name || c.value
+    }));
+  }
+
+  async function handlePost() {
+    const message = document.getElementById('message').value.trim();
+    const selected = getSelectedGroups();
+    const scheduleCheck = document.getElementById('scheduleCheck').checked;
+    const scheduleTime = document.getElementById('scheduleTime').value;
+
+    if (!message) { showStatus('❌ اكتب نص المنشور أولاً', 'error'); return; }
+    if (!selected.length) { showStatus('❌ اختار مجموعة واحدة على الأقل', 'error'); return; }
+
+    if (scheduleCheck) {
+      if (!scheduleTime) { showStatus('❌ حدد موعد النشر', 'error'); return; }
+      const delay = new Date(scheduleTime).getTime() - Date.now();
+      if (delay <= 0) { showStatus('❌ الوقت المحدد في الماضي', 'error'); return; }
+      showStatus(`✅ تم جدولة المنشور في ${selected.length} مجموعة — ${new Date(scheduleTime).toLocaleString('ar')}`, 'success');
+      addLog(message, selected, scheduleTime, 'مجدول ⏰');
+      setTimeout(() => postToGroups(message, selected), delay);
+      return;
+    }
+    await postToGroups(message, selected);
+  }
+
+  async function postToGroups(message, groups) {
+    const btn = document.getElementById('postBtn');
+    btn.disabled = true;
+    showStatus(`⏳ جاري النشر في ${groups.length} مجموعة...`, 'loading');
+    let success = 0, failed = 0;
+    for (const group of groups) {
+      await new Promise(resolve => {
+        FB.api(`/${group.id}/feed`, 'POST', { message }, function(res) {
+          if (res && res.id) success++; else failed++;
+          resolve();
+        });
+      });
+    }
+    showStatus(`✅ تم النشر في ${success} مجموعة${failed > 0 ? ` | ❌ فشل في ${failed}` : ''}`, success > 0 ? 'success' : 'error');
+    addLog(message, groups, new Date().toISOString(), `تم النشر في ${success}/${groups.length} ✅`);
+    document.getElementById('message').value = '';
+    btn.disabled = false;
+  }
+
+  function addLog(message, groups, time, status) {
+    logs.unshift({ message, groups: groups.map(g => g.name).join('، '), time, status });
+    const section = document.getElementById('logSection');
+    const list = document.getElementById('logList');
+    section.style.display = 'block';
+    list.innerHTML = logs.map(l => `
+      <div class="log-item">
+        <div>${l.message.substring(0, 80)}${l.message.length > 80 ? '...' : ''}</div>
+        <div class="meta">👥 ${l.groups} | 📅 ${new Date(l.time).toLocaleString('ar')} | ${l.status}</div>
+      </div>
+    `).join('');
+  }
+</script>
+</body>
+</html>
