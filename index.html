@@ -225,7 +225,7 @@
     var js, fjs = d.getElementsByTagName(s)[0];
     if (d.getElementById(id)) return;
     js = d.createElement(s); js.id = id;
-    js.src = "https://connect.facebook.net/ar_AR/sdk.js";
+    js.src = "https://connect.facebook.net/en_US/sdk.js";
     fjs.parentNode.insertBefore(js, fjs);
   }(document, 'script', 'facebook-jssdk'));
 
@@ -267,7 +267,7 @@
     FB.api('/me/groups', { fields: 'id,name,privacy', limit: 100 }, function(res) {
       const container = document.getElementById('groupsContainer');
       if (!res || res.error) {
-        container.innerHTML = `<div class="no-groups">⚠️ تعذّر جلب المجموعات<br><small>${res && res.error ? res.error.message : 'تحقق من صلاحيات التطبيق'}</small></div>`;
+        container.innerHTML = '<div class="no-groups">⚠️ تعذّر جلب المجموعات<br><small>' + (res && res.error ? res.error.message : 'تحقق من صلاحيات التطبيق') + '</small></div>';
         return;
       }
       if (!res.data || res.data.length === 0) {
@@ -283,13 +283,13 @@
   function renderGroups(groups) {
     const container = document.getElementById('groupsContainer');
     if (!groups.length) { container.innerHTML = '<div class="no-groups">لا توجد مجموعات</div>'; return; }
-    container.innerHTML = groups.map(g => `
-      <div class="group-item" onclick="document.getElementById('chk_${g.id}').click()">
-        <input type="checkbox" id="chk_${g.id}" value="${g.id}" onclick="event.stopPropagation()">
-        <div class="gname">${g.name}</div>
-        <span class="privacy">${g.privacy === 'OPEN' ? '🌍 عام' : '🔒 خاص'}</span>
-      </div>
-    `).join('');
+    container.innerHTML = groups.map(g =>
+      '<div class="group-item" onclick="document.getElementById(\'chk_' + g.id + '\').click()">' +
+      '<input type="checkbox" id="chk_' + g.id + '" value="' + g.id + '" onclick="event.stopPropagation()">' +
+      '<div class="gname">' + g.name + '</div>' +
+      '<span class="privacy">' + (g.privacy === 'OPEN' ? '🌍 عام' : '🔒 خاص') + '</span>' +
+      '</div>'
+    ).join('');
   }
 
   function selectAll() {
@@ -319,7 +319,7 @@
   function getSelectedGroups() {
     return Array.from(document.querySelectorAll('#groupsContainer input[type=checkbox]:checked')).map(c => ({
       id: c.value,
-      name: allGroups.find(g => g.id === c.value)?.name || c.value
+      name: allGroups.find(g => g.id === c.value) ? allGroups.find(g => g.id === c.value).name : c.value
     }));
   }
 
@@ -336,7 +336,7 @@
       if (!scheduleTime) { showStatus('❌ حدد موعد النشر', 'error'); return; }
       const delay = new Date(scheduleTime).getTime() - Date.now();
       if (delay <= 0) { showStatus('❌ الوقت المحدد في الماضي', 'error'); return; }
-      showStatus(`✅ تم جدولة المنشور في ${selected.length} مجموعة — ${new Date(scheduleTime).toLocaleString('ar')}`, 'success');
+      showStatus('✅ تم جدولة المنشور في ' + selected.length + ' مجموعة', 'success');
       addLog(message, selected, scheduleTime, 'مجدول ⏰');
       setTimeout(() => postToGroups(message, selected), delay);
       return;
@@ -347,33 +347,33 @@
   async function postToGroups(message, groups) {
     const btn = document.getElementById('postBtn');
     btn.disabled = true;
-    showStatus(`⏳ جاري النشر في ${groups.length} مجموعة...`, 'loading');
+    showStatus('⏳ جاري النشر في ' + groups.length + ' مجموعة...', 'loading');
     let success = 0, failed = 0;
     for (const group of groups) {
       await new Promise(resolve => {
-        FB.api(`/${group.id}/feed`, 'POST', { message }, function(res) {
+        FB.api('/' + group.id + '/feed', 'POST', { message: message }, function(res) {
           if (res && res.id) success++; else failed++;
           resolve();
         });
       });
     }
-    showStatus(`✅ تم النشر في ${success} مجموعة${failed > 0 ? ` | ❌ فشل في ${failed}` : ''}`, success > 0 ? 'success' : 'error');
-    addLog(message, groups, new Date().toISOString(), `تم النشر في ${success}/${groups.length} ✅`);
+    showStatus('✅ تم النشر في ' + success + ' مجموعة' + (failed > 0 ? ' | ❌ فشل في ' + failed : ''), success > 0 ? 'success' : 'error');
+    addLog(message, groups, new Date().toISOString(), 'تم النشر في ' + success + '/' + groups.length + ' ✅');
     document.getElementById('message').value = '';
     btn.disabled = false;
   }
 
   function addLog(message, groups, time, status) {
-    logs.unshift({ message, groups: groups.map(g => g.name).join('، '), time, status });
+    logs.unshift({ message: message, groups: groups.map(g => g.name).join('، '), time: time, status: status });
     const section = document.getElementById('logSection');
     const list = document.getElementById('logList');
     section.style.display = 'block';
-    list.innerHTML = logs.map(l => `
-      <div class="log-item">
-        <div>${l.message.substring(0, 80)}${l.message.length > 80 ? '...' : ''}</div>
-        <div class="meta">👥 ${l.groups} | 📅 ${new Date(l.time).toLocaleString('ar')} | ${l.status}</div>
-      </div>
-    `).join('');
+    list.innerHTML = logs.map(l =>
+      '<div class="log-item">' +
+      '<div>' + l.message.substring(0, 80) + (l.message.length > 80 ? '...' : '') + '</div>' +
+      '<div class="meta">👥 ' + l.groups + ' | 📅 ' + new Date(l.time).toLocaleString('ar') + ' | ' + l.status + '</div>' +
+      '</div>'
+    ).join('');
   }
 </script>
 </body>
