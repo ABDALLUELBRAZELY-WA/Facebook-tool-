@@ -3,378 +3,1001 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نشر تلقائي على مجموعات فيسبوك</title>
+<title>PostBridge — نشر ذكي على فيسبوك</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-    background: linear-gradient(135deg, #e8f0fe 0%, #f0f2f5 100%);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  .container {
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(24,119,242,0.10);
-    padding: 36px 32px;
-    width: 100%;
-    max-width: 560px;
-  }
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 28px;
-    justify-content: center;
-  }
-  .logo h1 { font-size: 1.4rem; color: #1877f2; font-weight: 700; }
-  #loginScreen { text-align: center; }
-  #loginScreen p { color: #666; margin-bottom: 28px; font-size: 0.97rem; line-height: 1.6; }
-  .fb-login-btn {
-    background: #1877f2;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    padding: 14px 32px;
-    font-size: 1.05rem;
-    font-weight: 700;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    transition: background 0.2s;
-  }
-  .fb-login-btn:hover { background: #1558b0; }
-  #appScreen { display: none; }
-  .user-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: #f0f2f5;
-    border-radius: 12px;
-    padding: 12px 16px;
-    margin-bottom: 24px;
-  }
-  .user-bar img { width: 42px; height: 42px; border-radius: 50%; border: 2px solid #1877f2; }
-  .user-bar .name { font-weight: 700; color: #222; font-size: 0.97rem; }
-  .user-bar .sub { font-size: 0.78rem; color: #888; }
-  .logout-btn {
-    margin-right: auto;
-    background: none;
-    border: 1.5px solid #ddd;
-    border-radius: 8px;
-    padding: 6px 14px;
-    color: #888;
-    font-size: 0.82rem;
-    cursor: pointer;
-  }
-  .logout-btn:hover { border-color: #e74c3c; color: #e74c3c; }
-  label { display: block; font-size: 0.88rem; color: #555; margin-bottom: 6px; font-weight: 600; }
-  .groups-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .select-all-btn { font-size: 0.78rem; color: #1877f2; cursor: pointer; background: none; border: none; font-weight: 600; }
-  .groups-container {
-    border: 1.5px solid #e0e0e0;
-    border-radius: 12px;
-    max-height: 220px;
-    overflow-y: auto;
-    margin-bottom: 18px;
-    background: #fafafa;
-  }
-  .group-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .group-item:last-child { border-bottom: none; }
-  .group-item:hover { background: #f0f4ff; }
-  .group-item input[type=checkbox] { width: 17px; height: 17px; accent-color: #1877f2; }
-  .group-item .gname { font-size: 0.92rem; color: #222; font-weight: 500; flex: 1; }
-  .privacy { font-size: 0.72rem; padding: 2px 8px; border-radius: 20px; background: #e8f0fe; color: #1877f2; }
-  .cat-row { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
-  .cat-btn { padding: 6px 14px; border-radius: 20px; border: 1.5px solid #ddd; background: white; font-size: 0.82rem; cursor: pointer; color: #555; }
-  .cat-btn.active { background: #1877f2; color: white; border-color: #1877f2; }
-  textarea {
-    width: 100%;
-    border: 1.5px solid #ddd;
-    border-radius: 12px;
-    padding: 13px 15px;
-    font-size: 0.95rem;
-    font-family: inherit;
-    direction: rtl;
-    min-height: 120px;
-    resize: vertical;
-    margin-bottom: 18px;
-    background: #f8f9fa;
-    transition: border 0.2s;
-  }
-  textarea:focus { border-color: #1877f2; outline: none; background: white; }
-  .schedule-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; cursor: pointer; font-size: 0.9rem; color: #444; font-weight: 600; }
-  .schedule-toggle input { width: 17px; height: 17px; accent-color: #1877f2; }
-  #scheduleBox { display: none; margin-bottom: 18px; }
-  #scheduleBox.show { display: block; }
-  input[type=datetime-local] { width: 100%; border: 1.5px solid #ddd; border-radius: 12px; padding: 12px 14px; font-size: 0.95rem; background: #f8f9fa; font-family: inherit; }
-  .post-btn { width: 100%; background: #1877f2; color: white; border: none; border-radius: 12px; padding: 15px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; margin-top: 4px; }
-  .post-btn:hover { background: #1558b0; }
-  .post-btn:disabled { background: #aaa; cursor: not-allowed; }
-  .status { margin-top: 16px; padding: 12px 16px; border-radius: 10px; font-size: 0.92rem; display: none; line-height: 1.5; }
-  .status.success { background: #e6f4ea; color: #256029; display: block; }
-  .status.error { background: #fdecea; color: #a61c00; display: block; }
-  .status.loading { background: #e8f0fe; color: #1558b0; display: block; }
-  .divider { border: none; border-top: 1px solid #eee; margin: 22px 0; }
-  .log-list { max-height: 200px; overflow-y: auto; }
-  .log-item { background: #f8f9fa; border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; font-size: 0.85rem; border-right: 4px solid #1877f2; }
-  .log-item .meta { color: #888; font-size: 0.75rem; margin-top: 3px; }
-  .warn-box { background: #fff8e1; border: 1.5px solid #ffe082; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; font-size: 0.83rem; color: #795548; line-height: 1.6; }
-  .no-groups { text-align: center; padding: 30px; color: #aaa; font-size: 0.9rem; }
-  .loading-groups { text-align: center; padding: 20px; color: #1877f2; font-size: 0.9rem; }
+:root {
+  --blue: #1877f2;
+  --blue2: #1558b0;
+  --bg: #0f1117;
+  --card: #1a1d27;
+  --card2: #22263a;
+  --border: #2e3250;
+  --text: #e8eaf6;
+  --sub: #8892b0;
+  --green: #00e676;
+  --red: #ff5252;
+  --yellow: #ffd740;
+  --radius: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Cairo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  direction: rtl;
+}
+
+/* NAV */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--blue);
+  letter-spacing: -0.5px;
+}
+.nav-logo span { color: var(--text); }
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: var(--sub);
+}
+.nav-user img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--blue);
+  display: none;
+}
+.nav-user img.show { display: block; }
+.logout-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--sub);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+  display: none;
+}
+.logout-btn.show { display: block; }
+.logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* MAIN */
+.main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+/* LOGIN */
+#loginScreen {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 20px;
+}
+.hero-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--blue), #42a5f5);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 8px 32px rgba(24,119,242,0.4);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 8px 32px rgba(24,119,242,0.4); }
+  50% { box-shadow: 0 8px 48px rgba(24,119,242,0.7); }
+}
+#loginScreen h1 { font-size: 2rem; font-weight: 900; }
+#loginScreen h1 span { color: var(--blue); }
+#loginScreen p { color: var(--sub); font-size: 1rem; max-width: 400px; line-height: 1.7; }
+.fb-btn {
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 16px 36px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(24,119,242,0.4);
+}
+.fb-btn:hover { background: var(--blue2); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(24,119,242,0.5); }
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 10px;
+  width: 100%;
+  max-width: 600px;
+}
+.feature {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--sub);
+}
+.feature .icon { font-size: 1.5rem; margin-bottom: 6px; }
+
+/* APP */
+#appScreen { display: none; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 650px) { .grid { grid-template-columns: 1fr; } }
+
+/* CARDS */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+.card-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--sub);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ACCOUNTS */
+.accounts-list { display: flex; flex-direction: column; gap: 8px; }
+.account-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.account-item:hover { border-color: var(--blue); }
+.account-item.active { border-color: var(--blue); background: rgba(24,119,242,0.1); }
+.account-item img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--border); }
+.account-item .acc-name { font-size: 0.88rem; font-weight: 600; flex: 1; }
+.account-item .acc-groups { font-size: 0.75rem; color: var(--sub); }
+.account-item .acc-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+.add-account-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: none;
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  color: var(--sub);
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+  transition: all 0.15s;
+  margin-top: 8px;
+}
+.add-account-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* GROUPS */
+.groups-search {
+  width: 100%;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-family: 'Cairo', sans-serif;
+  margin-bottom: 10px;
+  direction: rtl;
+}
+.groups-search:focus { outline: none; border-color: var(--blue); }
+.groups-search::placeholder { color: var(--sub); }
+
+.groups-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.small-btn {
+  flex: 1;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px;
+  color: var(--sub);
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+  transition: all 0.15s;
+}
+.small-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+.groups-list {
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.groups-list::-webkit-scrollbar { width: 4px; }
+.groups-list::-webkit-scrollbar-track { background: var(--card2); }
+.groups-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.group-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.group-item:hover { border-color: var(--blue); }
+.group-item.selected { border-color: var(--blue); background: rgba(24,119,242,0.1); }
+.group-item input[type=checkbox] { accent-color: var(--blue); width: 16px; height: 16px; }
+.group-name { font-size: 0.85rem; flex: 1; }
+.group-privacy {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(24,119,242,0.15);
+  color: var(--blue);
+}
+.group-cat {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(255,215,64,0.15);
+  color: var(--yellow);
+  cursor: pointer;
+}
+
+/* CATEGORIES */
+.cat-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.cat-tag {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--sub);
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+  transition: all 0.15s;
+}
+.cat-tag.active { background: var(--blue); color: white; border-color: var(--blue); }
+
+/* COMPOSER */
+.composer { grid-column: span 2; }
+@media (max-width: 650px) { .composer { grid-column: span 1; } }
+
+.compose-area {
+  width: 100%;
+  background: var(--card2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: 'Cairo', sans-serif;
+  min-height: 140px;
+  resize: vertical;
+  direction: rtl;
+  line-height: 1.7;
+  transition: border 0.2s;
+}
+.compose-area:focus { outline: none; border-color: var(--blue); }
+.compose-area::placeholder { color: var(--sub); }
+
+.compose-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.char-count { font-size: 0.78rem; color: var(--sub); }
+.char-count.warn { color: var(--yellow); }
+.char-count.over { color: var(--red); }
+
+.schedule-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.schedule-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--sub);
+  cursor: pointer;
+}
+.schedule-toggle input { accent-color: var(--blue); width: 16px; height: 16px; }
+.datetime-input {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: 'Cairo', sans-serif;
+  display: none;
+}
+.datetime-input.show { display: block; }
+
+.post-btn {
+  background: linear-gradient(135deg, var(--blue), #42a5f5);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 13px 32px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(24,119,242,0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.post-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(24,119,242,0.5); }
+.post-btn:disabled { background: var(--border); box-shadow: none; cursor: not-allowed; transform: none; }
+
+/* STATUS */
+.status-bar {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  display: none;
+  line-height: 1.6;
+}
+.status-bar.success { background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3); color: var(--green); display: block; }
+.status-bar.error { background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.3); color: var(--red); display: block; }
+.status-bar.loading { background: rgba(24,119,242,0.1); border: 1px solid rgba(24,119,242,0.3); color: #64b5f6; display: block; }
+
+/* PROGRESS */
+.progress-wrap { margin-top: 12px; display: none; }
+.progress-wrap.show { display: block; }
+.progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), #42a5f5);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.3s;
+}
+.progress-text { font-size: 0.78rem; color: var(--sub); }
+
+/* LOGS */
+.logs-section { grid-column: span 2; }
+@media (max-width: 650px) { .logs-section { grid-column: span 1; } }
+
+.log-list { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
+.log-list::-webkit-scrollbar { width: 4px; }
+.log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.log-item {
+  background: var(--card2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  border-right: 3px solid var(--blue);
+  font-size: 0.85rem;
+}
+.log-item.scheduled { border-color: var(--yellow); }
+.log-item.failed { border-color: var(--red); }
+.log-meta { font-size: 0.75rem; color: var(--sub); margin-top: 4px; }
+.log-status { font-size: 0.75rem; margin-top: 4px; }
+.log-status.success { color: var(--green); }
+.log-status.scheduled { color: var(--yellow); }
+.log-status.failed { color: var(--red); }
+
+/* STATS */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+.stat-num { font-size: 1.8rem; font-weight: 900; color: var(--blue); }
+.stat-label { font-size: 0.75rem; color: var(--sub); margin-top: 4px; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 30px; color: var(--sub); font-size: 0.88rem; }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  display: none;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  width: 90%;
+  max-width: 420px;
+}
+.modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; }
+.modal input {
+  width: 100%;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: 'Cairo', sans-serif;
+  direction: rtl;
+  margin-bottom: 12px;
+}
+.modal input:focus { outline: none; border-color: var(--blue); }
+.modal input::placeholder { color: var(--sub); }
+.modal-btns { display: flex; gap: 10px; margin-top: 8px; }
+.modal-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+}
+.modal-btn.primary { background: var(--blue); color: white; }
+.modal-btn.secondary { background: var(--card2); color: var(--sub); border: 1px solid var(--border); }
+
+.token-hint {
+  font-size: 0.75rem;
+  color: var(--sub);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  background: var(--card2);
+  padding: 10px 12px;
+  border-radius: 8px;
+  border-right: 3px solid var(--blue);
+}
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="logo">
-    <svg width="36" height="36" viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="#1877f2"/><path d="M22.5 20.5h3l.5-3.5h-3.5V15c0-1 .5-1.5 1.5-1.5h2V10.5s-1-.2-2.5-.2c-3 0-5 1.8-5 5v2.7H16V21h2.5V30h4V20.5z" fill="white"/></svg>
-    <h1>نشر تلقائي على المجموعات</h1>
-  </div>
 
+<nav class="nav">
+  <div class="nav-logo">
+    <svg width="28" height="28" viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="#1877f2"/><path d="M22.5 20.5h3l.5-3.5h-3.5V15c0-1 .5-1.5 1.5-1.5h2V10.5s-1-.2-2.5-.2c-3 0-5 1.8-5 5v2.7H16V21h2.5V30h4V20.5z" fill="white"/></svg>
+    Post<span>Bridge</span>
+  </div>
+  <div class="nav-user">
+    <img id="navPic" src="" alt="">
+    <span id="navName"></span>
+    <button class="logout-btn" id="logoutBtn" onclick="removeAccount(currentAccountIndex)">حذف الحساب</button>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- LOGIN -->
   <div id="loginScreen">
-    <p>سجّل دخولك بحساب فيسبوك عشان تشوف مجموعاتك وتنشر فيها مباشرة</p>
-    <button class="fb-login-btn" onclick="fbLogin()">
+    <div class="hero-icon">
+      <svg width="40" height="40" viewBox="0 0 40 40"><path d="M22.5 20.5h3l.5-3.5h-3.5V15c0-1 .5-1.5 1.5-1.5h2V10.5s-1-.2-2.5-.2c-3 0-5 1.8-5 5v2.7H16V21h2.5V30h4V20.5z" fill="white"/></svg>
+    </div>
+    <h1>نشر <span>ذكي</span> على فيسبوك</h1>
+    <p>أضف حسابك وانشر في مجموعاتك بضغطة واحدة — مع جدولة وإدارة متعددة الحسابات</p>
+    <button class="fb-btn" onclick="showAddAccountModal()">
       <svg width="20" height="20" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="white"/><path d="M22.5 20.5h3l.5-3.5h-3.5V15c0-1 .5-1.5 1.5-1.5h2V10.5s-1-.2-2.5-.2c-3 0-5 1.8-5 5v2.7H16V21h2.5V30h4V20.5z" fill="#1877f2"/></svg>
-      تسجيل الدخول بفيسبوك
+      إضافة حساب فيسبوك
     </button>
-    <p style="margin-top:20px; font-size:0.78rem; color:#bbb;">الأداة تستخدم Facebook Login الرسمي ولا تحفظ كلمة سرك</p>
+    <div class="features">
+      <div class="feature"><div class="icon">👥</div>متعدد الحسابات</div>
+      <div class="feature"><div class="icon">⏰</div>جدولة المنشورات</div>
+      <div class="feature"><div class="icon">🚀</div>نشر جماعي سريع</div>
+    </div>
   </div>
 
+  <!-- APP -->
   <div id="appScreen">
-    <div class="user-bar">
-      <img id="userPic" src="" alt="">
-      <div>
-        <div class="name" id="userName">...</div>
-        <div class="sub">متصل بفيسبوك ✓</div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="statAccounts">0</div>
+        <div class="stat-label">حسابات</div>
       </div>
-      <button class="logout-btn" onclick="fbLogout()">خروج</button>
+      <div class="stat-card">
+        <div class="stat-num" id="statGroups">0</div>
+        <div class="stat-label">مجموعات</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statPosts">0</div>
+        <div class="stat-label">منشورات</div>
+      </div>
     </div>
 
-    <div class="warn-box">
-      ⚠️ في وضع التطوير، الأداة تشتغل بس مع حسابك الشخصي. للنشر لعدد كبير من المستخدمين محتاج اعتماد التطبيق من فيسبوك (App Review).
+    <div class="grid">
+      <!-- ACCOUNTS -->
+      <div class="card">
+        <div class="card-title">👤 الحسابات</div>
+        <div class="accounts-list" id="accountsList"></div>
+        <button class="add-account-btn" onclick="showAddAccountModal()">+ إضافة حساب</button>
+      </div>
+
+      <!-- GROUPS -->
+      <div class="card">
+        <div class="card-title">👥 المجموعات</div>
+        <input class="groups-search" type="text" placeholder="بحث في المجموعات..." oninput="searchGroups(this.value)">
+        <div class="cat-row" id="catRow">
+          <button class="cat-tag active" onclick="filterCat('all', this)">الكل</button>
+          <button class="cat-tag" onclick="filterCat('عقارات', this)">عقارات</button>
+          <button class="cat-tag" onclick="filterCat('بيع وشراء', this)">بيع وشراء</button>
+          <button class="cat-tag" onclick="filterCat('وظائف', this)">وظائف</button>
+          <button class="cat-tag" onclick="filterCat('عام', this)">عام</button>
+        </div>
+        <div class="groups-actions">
+          <button class="small-btn" onclick="selectAllGroups()">تحديد الكل</button>
+          <button class="small-btn" onclick="deselectAllGroups()">إلغاء الكل</button>
+        </div>
+        <div class="groups-list" id="groupsList">
+          <div class="empty">اختر حساباً لعرض المجموعات</div>
+        </div>
+      </div>
+
+      <!-- COMPOSER -->
+      <div class="card composer">
+        <div class="card-title">✍️ إنشاء منشور</div>
+        <textarea class="compose-area" id="messageBox" placeholder="اكتب محتوى منشورك هنا..." oninput="updateCharCount()"></textarea>
+        <div class="compose-footer">
+          <span class="char-count" id="charCount">0 حرف</span>
+          <div class="schedule-row">
+            <label class="schedule-toggle">
+              <input type="checkbox" id="scheduleCheck" onchange="toggleSchedule()">
+              ⏰ جدولة
+            </label>
+            <input type="datetime-local" class="datetime-input" id="scheduleTime">
+            <button class="post-btn" id="postBtn" onclick="handlePost()">
+              <span id="postBtnText">🚀 نشر الآن</span>
+            </button>
+          </div>
+        </div>
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-text" id="progressText"></div>
+        </div>
+        <div class="status-bar" id="statusBar"></div>
+      </div>
+
+      <!-- LOGS -->
+      <div class="card logs-section" id="logsSection" style="display:none">
+        <div class="card-title">📋 سجل المنشورات</div>
+        <div class="log-list" id="logList"></div>
+      </div>
     </div>
+  </div>
+</div>
 
-    <div class="groups-header">
-      <label style="margin:0">👥 اختار المجموعات</label>
-      <button class="select-all-btn" onclick="selectAll()">تحديد الكل</button>
+<!-- ADD ACCOUNT MODAL -->
+<div class="modal-overlay" id="addAccountModal">
+  <div class="modal">
+    <h3>➕ إضافة حساب فيسبوك</h3>
+    <div class="token-hint">
+      📌 احصل على Access Token من <a href="https://developers.facebook.com/tools/explorer/" target="_blank" style="color:var(--blue)">Graph API Explorer</a><br>
+      تأكد من إضافة صلاحية: <strong>publish_to_groups</strong>
     </div>
-    <div class="groups-container" id="groupsContainer">
-      <div class="loading-groups">⏳ جاري تحميل مجموعاتك...</div>
-    </div>
-
-    <label>🏷️ فلتر التصنيف</label>
-    <div class="cat-row">
-      <button class="cat-btn active" onclick="filterCat('all', this)">الكل</button>
-      <button class="cat-btn" onclick="filterCat('عقارات', this)">عقارات</button>
-      <button class="cat-btn" onclick="filterCat('بيع وشراء', this)">بيع وشراء</button>
-      <button class="cat-btn" onclick="filterCat('وظائف', this)">وظائف</button>
-      <button class="cat-btn" onclick="filterCat('عام', this)">عام</button>
-    </div>
-
-    <label>✍️ نص المنشور</label>
-    <textarea id="message" placeholder="اكتب محتوى المنشور هنا..."></textarea>
-
-    <label class="schedule-toggle">
-      <input type="checkbox" id="scheduleCheck" onchange="toggleSchedule()">
-      ⏰ جدولة المنشور
-    </label>
-    <div id="scheduleBox">
-      <input type="datetime-local" id="scheduleTime" />
-    </div>
-
-    <button class="post-btn" id="postBtn" onclick="handlePost()">🚀 نشر الآن</button>
-    <div class="status" id="status"></div>
-
-    <hr class="divider">
-    <div id="logSection" style="display:none">
-      <label>📋 سجل المنشورات</label>
-      <div class="log-list" id="logList"></div>
+    <input type="text" id="accountName" placeholder="اسم الحساب (مثال: حسابي الشخصي)">
+    <input type="password" id="accountToken" placeholder="Access Token">
+    <div class="modal-btns">
+      <button class="modal-btn secondary" onclick="closeModal()">إلغاء</button>
+      <button class="modal-btn primary" onclick="addAccount()">إضافة ✓</button>
     </div>
   </div>
 </div>
 
 <script>
-  const APP_ID = '1955062585423721';
-  let accessToken = '';
-  let allGroups = [];
-  let groupCategories = {};
-  let logs = [];
+let accounts = JSON.parse(localStorage.getItem('pb_accounts') || '[]');
+let currentAccountIndex = -1;
+let allGroups = [];
+let groupCategories = {};
+let logs = JSON.parse(localStorage.getItem('pb_logs') || '[]');
+let totalPosts = parseInt(localStorage.getItem('pb_posts') || '0');
+let currentFilter = 'all';
+let currentSearch = '';
 
-  window.fbAsyncInit = function() {
-    FB.init({ appId: APP_ID, cookie: true, xfbml: true, version: 'v19.0' });
-    FB.getLoginStatus(function(response) {
-      if (response.status === 'connected') {
-        accessToken = response.authResponse.accessToken;
-        showApp();
-      }
-    });
-  };
-  (function(d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)) return;
-    js = d.createElement(s); js.id = id;
-    js.src = "https://connect.facebook.net/en_US/sdk.js";
-    fjs.parentNode.insertBefore(js, fjs);
-  }(document, 'script', 'facebook-jssdk'));
+function saveData() {
+  localStorage.setItem('pb_accounts', JSON.stringify(accounts));
+  localStorage.setItem('pb_logs', JSON.stringify(logs));
+  localStorage.setItem('pb_posts', totalPosts.toString());
+}
 
-  function fbLogin() {
-    FB.login(function(response) {
-      if (response.authResponse) {
-        accessToken = response.authResponse.accessToken;
-        showApp();
-      } else {
-        showStatus('❌ تم إلغاء تسجيل الدخول', 'error');
-      }
-    }, { scope: 'groups_access_member_info,publish_to_groups' });
+function init() {
+  if (accounts.length > 0) {
+    showApp();
+    selectAccount(0);
   }
+  renderLogs();
+  updateStats();
+}
 
-  function fbLogout() {
-    FB.logout(function() {
-      accessToken = '';
-      allGroups = [];
-      document.getElementById('loginScreen').style.display = 'block';
-      document.getElementById('appScreen').style.display = 'none';
-    });
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+}
+
+function showAddAccountModal() {
+  document.getElementById('addAccountModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('addAccountModal').classList.remove('show');
+  document.getElementById('accountName').value = '';
+  document.getElementById('accountToken').value = '';
+}
+
+async function addAccount() {
+  const name = document.getElementById('accountName').value.trim();
+  const token = document.getElementById('accountToken').value.trim();
+  if (!name || !token) { alert('يرجى ملء جميع الحقول'); return; }
+
+  // Verify token
+  try {
+    const res = await fetch('https://graph.facebook.com/me?fields=name,picture&access_token=' + token);
+    const data = await res.json();
+    if (data.error) { alert('Token غير صالح: ' + data.error.message); return; }
+
+    const account = {
+      id: Date.now(),
+      name: name,
+      fbName: data.name || name,
+      pic: data.picture && data.picture.data ? data.picture.data.url : '',
+      token: token,
+      groups: []
+    };
+    accounts.push(account);
+    saveData();
+    closeModal();
+    showApp();
+    renderAccounts();
+    selectAccount(accounts.length - 1);
+    updateStats();
+  } catch(e) {
+    alert('خطأ في الاتصال، تحقق من الـ Token');
   }
+}
 
-  function showApp() {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('appScreen').style.display = 'block';
-    loadUser();
-    loadGroups();
+function removeAccount(index) {
+  if (!confirm('هل تريد حذف هذا الحساب؟')) return;
+  accounts.splice(index, 1);
+  saveData();
+  if (accounts.length === 0) {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('appScreen').style.display = 'none';
+    currentAccountIndex = -1;
+  } else {
+    selectAccount(0);
   }
+  renderAccounts();
+  updateStats();
+}
 
-  function loadUser() {
-    FB.api('/me', { fields: 'name,picture' }, function(res) {
-      document.getElementById('userName').textContent = res.name || 'مستخدم';
-      if (res.picture && res.picture.data) document.getElementById('userPic').src = res.picture.data.url;
-    });
-  }
+function renderAccounts() {
+  const list = document.getElementById('accountsList');
+  if (accounts.length === 0) { list.innerHTML = '<div class="empty">لا توجد حسابات</div>'; return; }
+  list.innerHTML = accounts.map((acc, i) =>
+    '<div class="account-item ' + (i === currentAccountIndex ? 'active' : '') + '" onclick="selectAccount(' + i + ')">' +
+    (acc.pic ? '<img src="' + acc.pic + '" alt="">' : '<div style="width:36px;height:36px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1.1rem">👤</div>') +
+    '<div><div class="acc-name">' + acc.name + '</div><div class="acc-groups">' + (acc.groups ? acc.groups.length : 0) + ' مجموعة</div></div>' +
+    '<div class="acc-dot"></div>' +
+    '</div>'
+  ).join('');
+}
 
-  function loadGroups() {
-    FB.api('/me/groups', { fields: 'id,name,privacy', limit: 100 }, function(res) {
-      const container = document.getElementById('groupsContainer');
-      if (!res || res.error) {
-        container.innerHTML = '<div class="no-groups">⚠️ تعذّر جلب المجموعات<br><small>' + (res && res.error ? res.error.message : 'تحقق من صلاحيات التطبيق') + '</small></div>';
-        return;
-      }
-      if (!res.data || res.data.length === 0) {
-        container.innerHTML = '<div class="no-groups">لا توجد مجموعات في حسابك</div>';
-        return;
-      }
-      allGroups = res.data;
-      allGroups.forEach(g => { groupCategories[g.id] = 'عام'; });
-      renderGroups(allGroups);
-    });
-  }
+async function selectAccount(index) {
+  currentAccountIndex = index;
+  const acc = accounts[index];
+  renderAccounts();
 
-  function renderGroups(groups) {
-    const container = document.getElementById('groupsContainer');
-    if (!groups.length) { container.innerHTML = '<div class="no-groups">لا توجد مجموعات</div>'; return; }
-    container.innerHTML = groups.map(g =>
-      '<div class="group-item" onclick="document.getElementById(\'chk_' + g.id + '\').click()">' +
-      '<input type="checkbox" id="chk_' + g.id + '" value="' + g.id + '" onclick="event.stopPropagation()">' +
-      '<div class="gname">' + g.name + '</div>' +
-      '<span class="privacy">' + (g.privacy === 'OPEN' ? '🌍 عام' : '🔒 خاص') + '</span>' +
-      '</div>'
-    ).join('');
-  }
+  // Update nav
+  document.getElementById('navName').textContent = acc.fbName || acc.name;
+  const navPic = document.getElementById('navPic');
+  if (acc.pic) { navPic.src = acc.pic; navPic.classList.add('show'); }
+  document.getElementById('logoutBtn').classList.add('show');
 
-  function selectAll() {
-    const checks = document.querySelectorAll('#groupsContainer input[type=checkbox]');
-    const allChecked = Array.from(checks).every(c => c.checked);
-    checks.forEach(c => c.checked = !allChecked);
-  }
+  // Load groups
+  await loadGroups(acc.token, index);
+}
 
-  function filterCat(cat, btn) {
-    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderGroups(cat === 'all' ? allGroups : allGroups.filter(g => groupCategories[g.id] === cat));
-  }
+async function loadGroups(token, accountIndex) {
+  const list = document.getElementById('groupsList');
+  list.innerHTML = '<div class="empty">⏳ جاري تحميل المجموعات...</div>';
 
-  function toggleSchedule() {
-    const checked = document.getElementById('scheduleCheck').checked;
-    document.getElementById('scheduleBox').classList.toggle('show', checked);
-    document.getElementById('postBtn').textContent = checked ? '📅 جدولة المنشور' : '🚀 نشر الآن';
-  }
+  try {
+    const res = await fetch('https://graph.facebook.com/me/groups?fields=id,name,privacy&limit=100&access_token=' + token);
+    const data = await res.json();
 
-  function showStatus(msg, type) {
-    const el = document.getElementById('status');
-    el.textContent = msg;
-    el.className = 'status ' + type;
-  }
-
-  function getSelectedGroups() {
-    return Array.from(document.querySelectorAll('#groupsContainer input[type=checkbox]:checked')).map(c => ({
-      id: c.value,
-      name: allGroups.find(g => g.id === c.value) ? allGroups.find(g => g.id === c.value).name : c.value
-    }));
-  }
-
-  async function handlePost() {
-    const message = document.getElementById('message').value.trim();
-    const selected = getSelectedGroups();
-    const scheduleCheck = document.getElementById('scheduleCheck').checked;
-    const scheduleTime = document.getElementById('scheduleTime').value;
-
-    if (!message) { showStatus('❌ اكتب نص المنشور أولاً', 'error'); return; }
-    if (!selected.length) { showStatus('❌ اختار مجموعة واحدة على الأقل', 'error'); return; }
-
-    if (scheduleCheck) {
-      if (!scheduleTime) { showStatus('❌ حدد موعد النشر', 'error'); return; }
-      const delay = new Date(scheduleTime).getTime() - Date.now();
-      if (delay <= 0) { showStatus('❌ الوقت المحدد في الماضي', 'error'); return; }
-      showStatus('✅ تم جدولة المنشور في ' + selected.length + ' مجموعة', 'success');
-      addLog(message, selected, scheduleTime, 'مجدول ⏰');
-      setTimeout(() => postToGroups(message, selected), delay);
+    if (data.error) {
+      list.innerHTML = '<div class="empty">⚠️ ' + data.error.message + '</div>';
       return;
     }
-    await postToGroups(message, selected);
+
+    allGroups = data.data || [];
+    accounts[accountIndex].groups = allGroups;
+    saveData();
+
+    // Load categories
+    allGroups.forEach(g => {
+      if (!groupCategories[g.id]) groupCategories[g.id] = 'عام';
+    });
+
+    renderGroups();
+    updateStats();
+  } catch(e) {
+    list.innerHTML = '<div class="empty">❌ خطأ في الاتصال</div>';
+  }
+}
+
+function renderGroups() {
+  const list = document.getElementById('groupsList');
+  let groups = allGroups;
+
+  if (currentFilter !== 'all') {
+    groups = groups.filter(g => groupCategories[g.id] === currentFilter);
+  }
+  if (currentSearch) {
+    groups = groups.filter(g => g.name.toLowerCase().includes(currentSearch.toLowerCase()));
   }
 
-  async function postToGroups(message, groups) {
-    const btn = document.getElementById('postBtn');
-    btn.disabled = true;
+  if (!groups.length) { list.innerHTML = '<div class="empty">لا توجد مجموعات</div>'; return; }
+
+  list.innerHTML = groups.map(g =>
+    '<div class="group-item" id="gi_' + g.id + '" onclick="toggleGroup(\'' + g.id + '\')">' +
+    '<input type="checkbox" id="chk_' + g.id + '" onclick="event.stopPropagation()" onchange="toggleGroupCheck(\'' + g.id + '\')">' +
+    '<div class="group-name">' + g.name + '</div>' +
+    '<span class="group-cat" onclick="event.stopPropagation(); changeCat(\'' + g.id + '\')">' + (groupCategories[g.id] || 'عام') + '</span>' +
+    '<span class="group-privacy">' + (g.privacy === 'OPEN' ? '🌍' : '🔒') + '</span>' +
+    '</div>'
+  ).join('');
+}
+
+function toggleGroup(id) {
+  const chk = document.getElementById('chk_' + id);
+  if (chk) { chk.checked = !chk.checked; toggleGroupCheck(id); }
+}
+
+function toggleGroupCheck(id) {
+  const item = document.getElementById('gi_' + id);
+  const chk = document.getElementById('chk_' + id);
+  if (item && chk) item.classList.toggle('selected', chk.checked);
+}
+
+function selectAllGroups() {
+  document.querySelectorAll('#groupsList input[type=checkbox]').forEach(c => {
+    c.checked = true;
+    const item = document.getElementById('gi_' + c.value || c.id.replace('chk_', ''));
+  });
+  document.querySelectorAll('#groupsList .group-item').forEach(i => i.classList.add('selected'));
+  document.querySelectorAll('#groupsList input[type=checkbox]').forEach(c => c.checked = true);
+}
+
+function deselectAllGroups() {
+  document.querySelectorAll('#groupsList input[type=checkbox]').forEach(c => c.checked = false);
+  document.querySelectorAll('#groupsList .group-item').forEach(i => i.classList.remove('selected'));
+}
+
+function searchGroups(val) { currentSearch = val; renderGroups(); }
+
+function filterCat(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.cat-tag').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGroups();
+}
+
+function changeCat(groupId) {
+  const cats = ['عام', 'عقارات', 'بيع وشراء', 'وظائف'];
+  const current = groupCategories[groupId] || 'عام';
+  const next = cats[(cats.indexOf(current) + 1) % cats.length];
+  groupCategories[groupId] = next;
+  renderGroups();
+}
+
+function updateCharCount() {
+  const len = document.getElementById('messageBox').value.length;
+  const el = document.getElementById('charCount');
+  el.textContent = len + ' حرف';
+  el.className = 'char-count' + (len > 60000 ? ' over' : len > 50000 ? ' warn' : '');
+}
+
+function toggleSchedule() {
+  const checked = document.getElementById('scheduleCheck').checked;
+  document.getElementById('scheduleTime').classList.toggle('show', checked);
+  document.getElementById('postBtnText').textContent = checked ? '📅 جدولة' : '🚀 نشر الآن';
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('statusBar');
+  el.textContent = msg;
+  el.className = 'status-bar ' + type;
+}
+
+function getSelectedGroups() {
+  return Array.from(document.querySelectorAll('#groupsList input[type=checkbox]:checked')).map(c => {
+    const id = c.id.replace('chk_', '');
+    const g = allGroups.find(x => x.id === id);
+    return { id: id, name: g ? g.name : id };
+  });
+}
+
+async function handlePost() {
+  const message = document.getElementById('messageBox').value.trim();
+  const selected = getSelectedGroups();
+  const scheduleCheck = document.getElementById('scheduleCheck').checked;
+  const scheduleTime = document.getElementById('scheduleTime').value;
+
+  if (currentAccountIndex < 0) { showStatus('❌ اختر حساباً أولاً', 'error'); return; }
+  if (!message) { showStatus('❌ اكتب نص المنشور أولاً', 'error'); return; }
+  if (!selected.length) { showStatus('❌ اختر مجموعة واحدة على الأقل', 'error'); return; }
+
+  if (scheduleCheck) {
+    if (!scheduleTime) { showStatus('❌ حدد موعد النشر', 'error'); return; }
+    const delay = new Date(scheduleTime).getTime() - Date.now();
+    if (delay <= 0) { showStatus('❌ الوقت في الماضي', 'error'); return; }
+    showStatus('✅ تم جدولة المنشور في ' + selected.length + ' مجموعة', 'success');
+    addLog(message, selected, scheduleTime, 'scheduled');
+    setTimeout(() => postToGroups(message, selected), delay);
+    return;
+  }
+
+  await postToGroups(message, selected);
+}
+
+async function postToGroups(message, groups) {
+  const btn = document.getElementById('postBtn');
+  btn.disabled = true;
+  const token = accounts[currentAccountIndex].token;
+  let success = 0, failed = 0;
+
+  document.getElementById('progressWrap').classList.add('show');
+
+  for (let i = 0; i < groups.length; i++) {
+    const group = groups[i];
+    const pct = Math.round((i / groups.length) * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = 'جاري النشر في: ' + group.name + ' (' + (i+1) + '/' + groups.length + ')';
     showStatus('⏳ جاري النشر في ' + groups.length + ' مجموعة...', 'loading');
-    let success = 0, failed = 0;
-    for (const group of groups) {
-      await new Promise(resolve => {
-        FB.api('/' + group.id + '/feed', 'POST', { message: message }, function(res) {
-          if (res && res.id) success++; else failed++;
-          resolve();
-        });
+
+    try {
+      const res = await fetch('https://graph.facebook.com/' + group.id + '/feed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message, access_token: token })
       });
-    }
-    showStatus('✅ تم النشر في ' + success + ' مجموعة' + (failed > 0 ? ' | ❌ فشل في ' + failed : ''), success > 0 ? 'success' : 'error');
-    addLog(message, groups, new Date().toISOString(), 'تم النشر في ' + success + '/' + groups.length + ' ✅');
-    document.getElementById('message').value = '';
-    btn.disabled = false;
+      const data = await res.json();
+      if (data.id) success++; else failed++;
+    } catch(e) { failed++; }
+
+    await new Promise(r => setTimeout(r, 500));
   }
 
-  function addLog(message, groups, time, status) {
-    logs.unshift({ message: message, groups: groups.map(g => g.name).join('، '), time: time, status: status });
-    const section = document.getElementById('logSection');
-    const list = document.getElementById('logList');
-    section.style.display = 'block';
-    list.innerHTML = logs.map(l =>
-      '<div class="log-item">' +
-      '<div>' + l.message.substring(0, 80) + (l.message.length > 80 ? '...' : '') + '</div>' +
-      '<div class="meta">👥 ' + l.groups + ' | 📅 ' + new Date(l.time).toLocaleString('ar') + ' | ' + l.status + '</div>' +
-      '</div>'
-    ).join('');
-  }
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressText').textContent = 'اكتمل النشر!';
+
+  const msg = '✅ تم النشر في ' + success + ' مجموعة' + (failed > 0 ? ' | ❌ فشل في ' + failed : '');
+  showStatus(msg, success > 0 ? 'success' : 'error');
+
+  totalPosts += success;
+  addLog(message, groups, new Date().toISOString(), success > 0 ? 'success' : 'failed');
+  updateStats();
+  document.getElementById('messageBox').value = '';
+  updateCharCount();
+  btn.disabled = false;
+
+  setTimeout(() => {
+    document.getElementById('progressWrap').classList.remove('show');
+    document.getElementById('progressFill').style.width = '0%';
+  }, 3000);
+}
+
+function addLog(message, groups, time, status) {
+  logs.unshift({ message, groups: groups.map(g => g.name).join('، '), time, status });
+  if (logs.length > 50) logs.pop();
+  saveData();
+  renderLogs();
+}
+
+function renderLogs() {
+  const section = document.getElementById('logsSection');
+  const list = document.getElementById('logList');
+  if (!logs.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = logs.map(l => {
+    const statusText = l.status === 'success' ? '✅ تم النشر' : l.status === 'scheduled' ? '⏰ مجدول' : '❌ فشل';
+    return '<div class="log-item ' + (l.status === 'scheduled' ? 'scheduled' : l.status === 'failed' ? 'failed' : '') + '">' +
+      '<div>' + l.message.substring(0, 100) + (l.message.length > 100 ? '...' : '') + '</div>' +
+      '<div class="log-meta">👥 ' + l.groups + ' | 📅 ' + new Date(l.time).toLocaleString('ar') + '</div>' +
+      '<div class="log-status ' + l.status + '">' + statusText + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function updateStats() {
+  document.getElementById('statAccounts').textContent = accounts.length;
+  const total = accounts.reduce((sum, a) => sum + (a.groups ? a.groups.length : 0), 0);
+  document.getElementById('statGroups').textContent = total;
+  document.getElementById('statPosts').textContent = totalPosts;
+}
+
+init();
 </script>
 </body>
 </html>
